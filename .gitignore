@@ -1,0 +1,58 @@
+#  .gitignore - Voice-Controlled Mobile Robot (ROS 2 Jazzy / Gazebo Harmonic)
+
+# colcon / ROS 2 build artefacts
+build/
+install/
+log/
+COLCON_IGNORE
+latest
+latest_build
+
+# Python 
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Generated diagnostics 
+frames_*.pdf
+frames_*.gv
+
+# ROS bags and Gazebo logs 
+rosbag2_*/
+*.db3
+*.mcap
+*.bag
+*.sqlite3
+.gz/
+gz-sim-*.log
+ign-*.log
+
+# Editors and IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.#*
+
+# OS junk 
+.DS_Store
+Thumbs.db
+*.log
+
+# Local environment and secrets
+.env
+.env.*
+*.local
