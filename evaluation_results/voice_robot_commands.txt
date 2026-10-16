@@ -1,0 +1,434 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║         VOICE-CONTROLLED MOBILE ROBOT — TERMINAL COMMANDS REFERENCE         ║
+║         Course: Robotics Design Lab II  |  ROS2 Jazzy + Gazebo Harmonic     ║
+║         Students: Ali Ahmar Awan, Muhammad Mamoon                           ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+All commands assume workspace at: /home/mamoon/ros2_ws
+Source these two lines in every new terminal before any ros2 command:
+  source /opt/ros/jazzy/setup.bash
+  source /home/mamoon/ros2_ws/install/setup.bash
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 1 — ENVIRONMENT VERIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Check ROS2 distribution (should print: jazzy)
+echo $ROS_DISTRO
+
+# Check Gazebo version (should print: Gazebo Sim, version 8.x)
+gz sim --version
+
+# Check ros_gz packages are installed
+ros2 pkg list | grep ros_gz
+
+# Check Python version (should print: Python 3.12.x)
+python3 --version
+
+# Check speech_recognition is installed
+python3 -c "import speech_recognition; print(speech_recognition.__version__)"
+
+# Check pyaudio is installed
+python3 -c "import pyaudio; print('pyaudio ok')"
+
+# Check colcon is available
+colcon version-check 2>/dev/null || echo "colcon present"
+
+# Check workspace path (should print: /home/mamoon/ros2_ws/install)
+echo $COLCON_PREFIX_PATH
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 2 — DEPENDENCY INSTALLATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Install PortAudio system library (required by pyaudio)
+sudo apt install portaudio19-dev python3-pyaudio -y
+
+# Install Python speech recognition library
+pip install SpeechRecognition --break-system-packages
+
+# Install Python audio I/O library
+pip install pyaudio --break-system-packages
+
+# Install matplotlib for evaluation graphs
+pip install matplotlib --break-system-packages
+
+# Install ROS2 + Gazebo integration packages
+sudo apt install -y \
+  ros-jazzy-ros-gz \
+  ros-jazzy-ros-gz-bridge \
+  ros-jazzy-ros-gz-sim \
+  ros-jazzy-xacro \
+  ros-jazzy-robot-state-publisher \
+  ros-jazzy-joint-state-publisher \
+  ros-jazzy-teleop-twist-keyboard
+
+# Verify all key packages installed
+ros2 pkg list | grep -E "xacro|robot_state_publisher|joint_state"
+
+# Verify Python dependencies all working
+python3 -c "import speech_recognition; import pyaudio; import matplotlib; print('All OK')"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 3 — PACKAGE CREATION & STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Navigate to ROS2 workspace source folder
+cd /home/mamoon/ros2_ws/src
+
+# Create the voice_robot Python package with dependencies
+ros2 pkg create voice_robot \
+  --build-type ament_python \
+  --dependencies rclpy std_msgs geometry_msgs
+
+# Create all required subdirectories
+mkdir -p voice_robot/launch
+mkdir -p voice_robot/urdf
+mkdir -p voice_robot/worlds
+mkdir -p voice_robot/config
+
+# Verify package structure was created correctly
+find voice_robot -type f | sort
+
+# Expected output:
+#   voice_robot/package.xml
+#   voice_robot/resource/voice_robot
+#   voice_robot/setup.cfg
+#   voice_robot/setup.py
+#   voice_robot/test/test_copyright.py
+#   voice_robot/test/test_flake8.py
+#   voice_robot/test/test_pep257.py
+#   voice_robot/voice_robot/__init__.py
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 4 — BUILDING THE PACKAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Navigate to workspace root first
+cd /home/mamoon/ros2_ws
+
+# Build only voice_robot package (fast, symlink-install means no rebuild needed for Python edits)
+colcon build --packages-select voice_robot --symlink-install
+
+# Build with full output visible (use when debugging build errors)
+colcon build --packages-select voice_robot --symlink-install --event-handlers console_direct+
+
+# Build all packages in workspace
+colcon build --symlink-install
+
+# Source the workspace after every build (makes new executables available)
+source install/setup.bash
+
+# Verify all 4 executables are registered
+ros2 pkg executables voice_robot
+
+# Expected output:
+#   voice_robot command_interpreter_node
+#   voice_robot motor_control_node
+#   voice_robot performance_evaluator
+#   voice_robot speech_command_node
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 5 — URDF VALIDATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Navigate to URDF directory
+cd /home/mamoon/ros2_ws/src/voice_robot/urdf
+
+# Parse xacro to raw URDF and print output (checks for xacro syntax errors)
+xacro diff_robot.urdf.xacro
+
+# Convert xacro to URDF file and validate link/joint structure
+xacro diff_robot.urdf.xacro > /tmp/robot_check.urdf
+check_urdf /tmp/robot_check.urdf
+
+# Expected output:
+#   robot name is: diff_robot
+#   ---------- Successfully Parsed XML ---------------
+#   root Link: base_footprint has 1 child(ren)
+#       child(1):  base_link
+#           child(1):  caster_wheel
+#           child(2):  left_wheel
+#           child(3):  right_wheel
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 6 — RUNNING THE FULL SIMULATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# TERMINAL 1 — Start full simulation (Gazebo + bridge + nodes + RViz2)
+source /opt/ros/jazzy/setup.bash
+source /home/mamoon/ros2_ws/install/setup.bash
+ros2 launch voice_robot robot_sim.launch.py
+
+# TERMINAL 2 — Start speech input node (keyboard mode)
+source /opt/ros/jazzy/setup.bash
+source /home/mamoon/ros2_ws/install/setup.bash
+ros2 run voice_robot speech_command_node --keyboard
+
+# TERMINAL 2 — Start speech input node (microphone mode, requires internet for Google STT)
+source /opt/ros/jazzy/setup.bash
+source /home/mamoon/ros2_ws/install/setup.bash
+ros2 run voice_robot speech_command_node
+
+# Run nodes only (no Gazebo) — useful for pipeline testing
+ros2 launch voice_robot nodes_only.launch.py
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 7 — RUNNING INDIVIDUAL NODES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Run speech command node (keyboard mode)
+ros2 run voice_robot speech_command_node --keyboard
+
+# Run speech command node (microphone mode)
+ros2 run voice_robot speech_command_node
+
+# Run command interpreter node
+ros2 run voice_robot command_interpreter_node
+
+# Run motor control node
+ros2 run voice_robot motor_control_node
+
+# Run performance evaluator (simulation must be running first)
+ros2 run voice_robot performance_evaluator
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 8 — MANUAL TESTING & PIPELINE VERIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Manually publish a voice command (bypasses speech node, tests pipeline)
+ros2 topic pub --once /voice_command std_msgs/msg/String "data: 'forward'"
+ros2 topic pub --once /voice_command std_msgs/msg/String "data: 'backward'"
+ros2 topic pub --once /voice_command std_msgs/msg/String "data: 'left'"
+ros2 topic pub --once /voice_command std_msgs/msg/String "data: 'right'"
+ros2 topic pub --once /voice_command std_msgs/msg/String "data: 'stop'"
+
+# Manually publish a velocity command (bypasses interpreter, tests Gazebo bridge)
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.3, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
+
+# Continuously publish forward velocity (robot keeps moving until Ctrl+C)
+ros2 topic pub /cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.3, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
+
+# Stop robot immediately
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.0, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}"
+
+# Control robot with keyboard teleop (alternative control method)
+ros2 run teleop_twist_keyboard teleop_twist_keyboard
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 9 — TOPIC & NODE MONITORING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# List all active topics
+ros2 topic list
+
+# List all active nodes
+ros2 node list
+
+# Monitor voice commands being published
+ros2 topic echo /voice_command
+
+# Monitor velocity commands going to robot
+ros2 topic echo /cmd_vel
+
+# Monitor motor status
+ros2 topic echo /motor_status
+
+# Monitor clamped/safe velocity output
+ros2 topic echo /cmd_vel_safe
+
+# Monitor odometry (robot position)
+ros2 topic echo /odom
+
+# Monitor TF transforms
+ros2 topic echo /tf
+
+# Check publish rate of a topic (Hz)
+ros2 topic hz /odom
+ros2 topic hz /cmd_vel
+ros2 topic hz /motor_status
+
+# Check topic message type
+ros2 topic info /voice_command
+ros2 topic info /cmd_vel
+
+# Get full node info (subscriptions, publications, parameters)
+ros2 node info /command_interpreter_node
+ros2 node info /motor_control_node
+ros2 node info /speech_command_node
+
+# View the full ROS2 node graph
+ros2 run rqt_graph rqt_graph
+
+# View TF tree
+ros2 run rqt_tf_tree rqt_tf_tree
+
+# Print TF tree to terminal
+ros2 run tf2_tools view_frames
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 10 — PERFORMANCE EVALUATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Step 1: Start simulation (Terminal 1)
+ros2 launch voice_robot robot_sim.launch.py
+
+# Step 2: Run automated evaluator (Terminal 2) — runs 13-command test automatically
+ros2 run voice_robot performance_evaluator
+
+# Step 3: Generate graphs from results (after evaluator finishes)
+python3 ~/ros2_ws/src/voice_robot/voice_robot/generate_graphs.py
+
+# View evaluation results files
+ls ~/ros2_ws/evaluation_results/
+ls ~/ros2_ws/evaluation_results/graphs/
+
+# Print summary report
+cat ~/ros2_ws/evaluation_results/summary_report.txt
+
+# Print latency CSV
+cat ~/ros2_ws/evaluation_results/latency_log.csv
+
+# Print accuracy CSV
+cat ~/ros2_ws/evaluation_results/accuracy_log.csv
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 11 — RVIZ2 CONFIGURATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Launch RViz2 standalone with saved config
+rviz2 -d /home/mamoon/ros2_ws/src/voice_robot/config/rviz_config.rviz
+
+# Launch RViz2 standalone (no config — manual setup)
+rviz2
+
+# RViz2 manual setup steps (do inside RViz2 GUI):
+#   1. Global Options → Fixed Frame → type: odom
+#   2. Add → RobotModel → Description Topic → /robot_description
+#   3. Add → TF → (shows coordinate frames)
+#   4. Add → Odometry → Topic → /odom
+#   5. File → Save Config As → config/rviz_config.rviz
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 12 — DEBUGGING & TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Check ROS2 log files location
+ls ~/.ros/log/
+
+# View latest log folder
+ls ~/.ros/log/ | tail -1
+
+# Kill all running ROS2 processes (use if system is stuck)
+pkill -f ros2
+pkill -f gz
+
+# Kill Gazebo specifically
+pkill -f "gz sim"
+
+# Check if any ros2 nodes are still running
+ros2 node list
+
+# Rebuild from scratch (clean build — fixes most persistent errors)
+cd /home/mamoon/ros2_ws
+rm -rf build/ install/ log/
+colcon build --packages-select voice_robot --symlink-install
+source install/setup.bash
+
+# Check if a package is properly installed
+ros2 pkg prefix voice_robot
+
+# Verify installed share files (launch, urdf, worlds, config)
+ls $(ros2 pkg prefix voice_robot)/share/voice_robot/
+ls $(ros2 pkg prefix voice_robot)/share/voice_robot/launch/
+ls $(ros2 pkg prefix voice_robot)/share/voice_robot/urdf/
+ls $(ros2 pkg prefix voice_robot)/share/voice_robot/worlds/
+ls $(ros2 pkg prefix voice_robot)/share/voice_robot/config/
+
+# Check bridge is receiving/sending messages
+ros2 topic echo /cmd_vel   # should show Twist messages when commands sent
+
+# Test Gazebo bridge manually
+ros2 topic pub --once /cmd_vel geometry_msgs/msg/Twist \
+  "{linear: {x: 0.2}}"
+
+# Check if robot_description is being published
+ros2 topic echo /robot_description --once
+
+# Check TF tree is publishing correctly
+ros2 run tf2_ros tf2_echo odom base_footprint
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 13 — COMPLETE WORKFLOW (QUICK REFERENCE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every session — run these first in every terminal:
+  source /opt/ros/jazzy/setup.bash
+  source /home/mamoon/ros2_ws/install/setup.bash
+
+After editing any Python file:
+  cd /home/mamoon/ros2_ws
+  colcon build --packages-select voice_robot --symlink-install
+  source install/setup.bash
+
+Normal simulation session (3 terminals):
+  [T1] ros2 launch voice_robot robot_sim.launch.py
+  [T2] ros2 run voice_robot speech_command_node --keyboard
+  [T3] ros2 topic echo /motor_status
+
+Performance evaluation session (2 terminals):
+  [T1] ros2 launch voice_robot robot_sim.launch.py
+  [T2] ros2 run voice_robot performance_evaluator
+  [T2] python3 ~/ros2_ws/src/voice_robot/voice_robot/generate_graphs.py
+
+Pipeline test only — no Gazebo (3 terminals):
+  [T1] ros2 run voice_robot command_interpreter_node
+  [T2] ros2 run voice_robot motor_control_node
+  [T3] ros2 topic pub --once /voice_command std_msgs/msg/String "data: 'forward'"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  SECTION 14 — PROJECT FILE LOCATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Source files:
+  /home/mamoon/ros2_ws/src/voice_robot/
+  ├── package.xml                              — package dependencies
+  ├── setup.py                                 — entry points & data files
+  ├── setup.cfg                                — install config
+  ├── voice_robot/
+  │   ├── __init__.py
+  │   ├── speech_command_node.py               — Node 1: voice/keyboard input
+  │   ├── command_interpreter_node.py          — Node 2: command → Twist
+  │   ├── motor_control_node.py                — Node 3: safety + monitoring
+  │   ├── performance_evaluator.py             — automated latency testing
+  │   └── generate_graphs.py                   — matplotlib report graphs
+  ├── launch/
+  │   ├── robot_sim.launch.py                  — full simulation launch
+  │   └── nodes_only.launch.py                 — software nodes only
+  ├── urdf/
+  │   └── diff_robot.urdf.xacro               — robot model
+  ├── worlds/
+  │   └── robot_world.sdf                      — Gazebo arena
+  └── config/
+      └── rviz_config.rviz                     — RViz2 display config
+
+Evaluation outputs:
+  ~/ros2_ws/evaluation_results/
+  ├── latency_log.csv                          — per-command latency data
+  ├── accuracy_log.csv                         — per-command accuracy data
+  ├── summary_report.txt                       — overall statistics
+  └── graphs/
+      ├── latency_by_command.png               — bar chart
+      ├── latency_timeline.png                 — sequence line chart
+      ├── command_accuracy.png                 — stacked accuracy bar
+      └── latency_histogram.png                — latency distribution
+
+ROS2 logs:
+  ~/.ros/log/                                  — all launch and node logs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  END OF REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

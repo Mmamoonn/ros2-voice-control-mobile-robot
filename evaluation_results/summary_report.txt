@@ -1,0 +1,22 @@
+
+══════════════════════════════════════════════
+  PERFORMANCE EVALUATION SUMMARY
+══════════════════════════════════════════════
+  Total commands tested  : 13
+  Correct executions     : 13
+  Command accuracy       : 100.0%
+
+  Latency (ms)
+    Min     : 3.2
+    Max     : 21.3
+    Mean    : 11.5
+    Median  : 11.3
+    Std Dev : 5.0
+══════════════════════════════════════════════
+
+Per-command breakdown:
+  forward   : n= 3  mean=  14.3ms  accuracy=3/3
+  backward  : n= 1  mean=   9.5ms  accuracy=1/1
+  left      : n= 2  mean=   7.2ms  accuracy=2/2
+  right     : n= 2  mean=  12.5ms  accuracy=2/2
+  stop      : n= 5  mean=  11.6ms  accuracy=5/5

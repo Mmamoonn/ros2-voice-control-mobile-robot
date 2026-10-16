@@ -1,0 +1,14 @@
+command,latency_ms,accurate
+forward,21.346,True
+stop,7.1,True
+backward,9.474,True
+stop,13.38,True
+left,3.208,True
+stop,13.093,True
+right,14.536,True
+stop,16.379,True
+forward,16.471,True
+left,11.282,True
+forward,5.206,True
+right,10.412,True
+stop,8.167,True

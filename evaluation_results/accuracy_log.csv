@@ -1,0 +1,14 @@
+command,expected_linear,expected_angular,received_linear,received_angular,correct
+forward,0.3,0.0,0.3,0.0,True
+stop,0.0,0.0,0.0,0.0,True
+backward,-0.3,0.0,-0.3,0.0,True
+stop,0.0,0.0,0.0,0.0,True
+left,0.0,0.8,0.0,0.8,True
+stop,0.0,0.0,0.0,0.0,True
+right,0.0,-0.8,0.0,-0.8,True
+stop,0.0,0.0,0.0,0.0,True
+forward,0.3,0.0,0.3,0.0,True
+left,0.0,0.8,0.0,0.8,True
+forward,0.3,0.0,0.3,0.0,True
+right,0.0,-0.8,0.0,-0.8,True
+stop,0.0,0.0,0.0,0.0,True
